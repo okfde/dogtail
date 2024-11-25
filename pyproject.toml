@@ -1,0 +1,13 @@
+[project]
+name = "dogtail"
+version = "0.1.0"
+description = "A simple logtail-like reader"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+license = 'GPL v2'
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.3",
+]
