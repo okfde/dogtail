@@ -54,7 +54,7 @@ class Dogtail:
         if self._offset_file.exists() and self._offset_file.stat().st_size:
             with open(self._offset_file) as f:
                 inode, offset = [int(line.strip()) for line in f]
-                logger.info(f"Read offset: {inode=} {offset=}")
+                logger.debug(f"Read offset: {inode=} {offset=}")
                 self._open_known_file(inode, offset)
 
     def __iter__(self):
@@ -87,24 +87,23 @@ class Dogtail:
         return line, Offset(counter=self._counter, inode=fh_inode, offset=curr_offset)
 
     def _close(self):
-        logger.info(f"Closing {self._fh=}")
+        logger.debug(f"Closing {self._fh=}")
         if not self._fh:
             return
 
         self._fh.close()
         self._fh = None
-        logger.info(f"Closed {self._fh=}")
 
     def _try_open(self, path) -> Optional[TextIO]:
         try:
             return open(path, "r", 1, errors="backslashreplace")
         except OSError as e:
-            logger.info(f"Failed to open {e=}")
+            logger.debug(f"Failed to open {e=}")
 
     def _open_known_file(self, inode, offset):
-        logger.info(f"Finding {inode=} in {self._logfile_candidates}")
+        logger.debug(f"Finding {inode=} in {self._logfile_candidates}")
         for filename in self._logfile_candidates:
-            logger.info(f"Trying {filename=}")
+            logger.debug(f"Trying {filename=}")
 
             if (fh := self._try_open(filename)) is not None:
                 fh_inode = fstat(fh.fileno()).st_ino
@@ -114,11 +113,11 @@ class Dogtail:
                     self.curr_offset = offset
                     self.current_inode = fh_inode
 
-                    logger.info(f"Opened {self._fh=} at {offset=}")
+                    logger.debug(f"Opened {self._fh=} at {offset=}")
                     return
 
         else:
-            logger.info("No matching file found")
+            logger.debug("No matching file found")
 
     def _open_first_file(self):
         if (fh := self._try_open(self._logfile_candidates[0])) is not None:
@@ -130,7 +129,7 @@ class Dogtail:
                 logging.info("aborting")
                 return
             self._fh = fh
-            logger.info(f"Opened {self._fh=}")
+            logger.debug(f"Opened {self._fh=}")
             self._counter += 1
             self.curr_offset = 0
             self.current_inode = fh_inode
@@ -141,18 +140,15 @@ class Dogtail:
             self._open_first_file()
 
     def __next__(self) -> Tuple[str, Offset]:
-        logger.info("next")
         try:
             line = self._get_next_line()
-            logger.info(f"read 1 {line=}")
             return line
         except StopIteration:
-            logger.info("EOF")
+            logger.debug("EOF")
             # EOF. open next file if possible and continue, else stop iteration
             # open up current logfile and continue
             self._close()
             line = self._get_next_line()
-            logger.info(f"read 2 {line=}")
             return line
 
     def readlines(self):
